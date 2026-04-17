@@ -1,0 +1,123 @@
+/* Progress Component Styles - 进度组件样式 */
+
+/* Progress Section */
+.progress-section {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.progress-section h3 {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--color-primary);
+    font-size: 1.25rem;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: var(--spacing-sm);
+}
+
+/* Progress Content */
+.progress-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: var(--spacing-sm);
+}
+
+/* Progress Items */
+.progress-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: #ebecef;
+    border-left: 3px solid var(--color-secondary);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-base);
+    animation: slideInLeft 0.3s ease-out;
+}
+
+.progress-item:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+/* Progress Item Variants */
+.progress-item-start {
+    border-left-color: var(--color-info);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.progress-item-session {
+    border-left-color: var(--color-info);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.progress-item-assistant {
+    border-left-color: var(--color-primary);
+    background: rgba(74, 108, 247, 0.1);
+}
+
+.progress-item-tool {
+    border-left-color: var(--color-warning);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.progress-item-result {
+    border-left-color: var(--color-success);
+    background: rgba(16, 185, 129, 0.15);
+    font-weight: 600;
+}
+
+.progress-item-last {
+    border-left-width: 4px;
+    background: rgba(74, 108, 247, 0.2);
+    margin-top: var(--spacing-sm);
+}
+
+.progress-item-error {
+    border-left-color: var(--color-error);
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* Progress Icon */
+.progress-icon {
+    font-size: 1.2rem;
+    min-width: 30px;
+    text-align: center;
+}
+
+/* Progress Message */
+.progress-message {
+    flex: 1;
+    color: #9ca3af;
+    font-size: 1.05rem;
+    font-weight: 500;
+}
+
+.progress-message .file-download-link {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    margin: 4px 0;
+}
+
+/* Progress Time */
+.progress-time {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    min-width: 70px;
+    text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .progress-section {
+        padding: var(--spacing-md);
+    }
+
+    .progress-item {
+        padding: var(--spacing-sm);
+    }
+}

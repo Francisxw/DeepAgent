@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录注册 - 沃华医药</title>
+    <link rel="stylesheet" href="/ui/css/reset.css">
+    <link rel="stylesheet" href="/ui/css/variables.css">
+    <link rel="stylesheet" href="/ui/css/main.css">
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <header class="header">
+                <h1 class="logo">DeepResearchBot</h1>
+                <p class="subtitle">员工认证</p>
+            </header>
+
+            <main class="main">
+                <!-- 标签页切换 -->
+                <div class="tab-container">
+                    <button type="button" class="tab-btn active" data-tab="login">登录</button>
+                    <button type="button" class="tab-btn" data-tab="register">注册</button>
+                </div>
+
+                <!-- 错误消息提示 -->
+                <div id="error-message" class="error-message"></div>
+
+                <!-- 登录表单 -->
+                <div id="login-form" class="auth-form">
+
+                    <!-- 登录方式切换 -->
+                    <div class="login-type-switch">
+                        <button type="button" class="switch-label active" id="switch-password">
+                            密码登录
+                        </button>
+                        <button type="button" class="switch-label" id="switch-code">
+                            验证码登录
+                        </button>
+                    </div>
+
+                    <!-- 密码登录表单 -->
+                    <form id="password-login-form">
+                        <div class="form-group">
+                            <label class="form-label" for="login-email">邮箱</label>
+                            <input type="email" id="login-email" class="form-input" placeholder="请输入企业邮箱" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="login-password">密码</label>
+                            <input type="password" id="login-password" class="form-input" placeholder="请输入密码" required>
+                        </div>
+
+                        <button type="submit" id="login-submit-btn" class="btn-primary">登录</button>
+                    </form>
+
+                    <!-- 验证码登录表单 -->
+                    <form id="code-login-form" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label" for="login-code-email">邮箱</label>
+                            <input type="email" id="login-code-email" class="form-input" placeholder="请输入企业邮箱" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="verification-code-input">验证码</label>
+                            <div class="verification-code-group">
+                                <input type="text" id="verification-code-input" class="verification-code-group input" placeholder="6位验证码" maxlength="6" required>
+                                <button type="button" id="send-code-btn" class="send-code-btn">发送验证码</button>
+                            </div>
+                            <span id="countdown" class="countdown"></span>
+                        </div>
+
+                        <button type="submit" id="code-login-submit-btn" class="btn-primary">登录</button>
+                    </form>
+
+
+                </div>
+
+                <!-- 注册表单 -->
+                <div id="register-form" class="auth-form" style="display: none;">
+
+                    <form id="register-form-element">
+                        <div class="form-group">
+                            <label class="form-label" for="register-email">邮箱 <span class="optional-field">*</span></label>
+                            <input type="email" id="register-email" class="form-input" placeholder="请输入企业邮箱" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="register-password">密码 <span class="optional-field">*</span></label>
+                            <input type="password" id="register-password" class="form-input" placeholder="请输入密码（至少6位）" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="register-confirm-password">确认密码 <span class="optional-field">*</span></label>
+                            <input type="password" id="register-confirm-password" class="form-input" placeholder="请再次输入密码" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="register-name">姓名</label>
+                            <input type="text" id="register-name" class="form-input" placeholder="请输入姓名">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="register-department">部门</label>
+                            <input type="text" id="register-department" class="form-input" placeholder="请输入部门">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="register-phone">手机号</label>
+                            <input type="text" id="register-phone" class="form-input" placeholder="请输入手机号">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="register-employee-id">员工工号</label>
+                            <input type="text" id="register-employee-id" class="form-input" placeholder="请输入员工工号">
+                        </div>
+
+                        <button type="submit" id="register-submit-btn" class="btn-primary">注册</button>
+                    </form>
+
+                    <div style="margin-top: var(--spacing-lg); text-align: center;">
+                        <a href="/ui/index.html" style="color: var(--color-secondary); text-decoration: none;">
+                            已有账号？点击登录
+                        </a>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script type="module" src="/ui/js/auth-main.js"></script>
+  </body>
+</html>
