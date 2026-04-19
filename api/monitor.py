@@ -56,26 +56,13 @@ class ToolMonitor:
 
         # 1. 优先尝试通过 FastAPI WebSocket 发送 (定向推送)
         if self.websocket_manager:
-            try:
-                # 获取当前线程 ID
-                thread_id = get_thread_context()
-
-                # 假设 manager 有 loop 属性指向创建它的事件循环
-                if (
-                    hasattr(self.websocket_manager, "loop")
-                    and self.websocket_manager.loop
-                ):
-                    if thread_id:
-                        asyncio.run_coroutine_threadsafe(
-                            self.websocket_manager.send_to_thread(payload, thread_id),
-                            self.websocket_manager.loop,
-                        )
-                    else:
-                        # 如果没有 thread_id，说明可能是系统级消息，或者未上下文环境
-                        # 可以选择广播，或者忽略。这里选择仅在控制台输出警告
-                        pass
-            except Exception as e:
-                logger.warning("WebSocket send failed: %s", e)
+            thread_id = get_thread_context()
+            if thread_id:
+                try:
+                    # 使用线程安全的发送方法（不再直接访问 loop）
+                    self.websocket_manager.send_to_thread_safe(payload, thread_id)
+                except Exception as e:
+                    logger.warning("WebSocket send failed: %s", e)
 
         # 2. 尝试通过全局 runtime 输出 (DeepAgents 脚本模式)
         # 这使得 simple_agents.py 中的 MockRuntime 能接收到数据

@@ -53,24 +53,34 @@ from api.mongodb_client import get_async_client
 logger = logging.getLogger(__name__)
 
 
-# 定义 lifespan 上下文管理器（替代 @app.on_event）
+# 定义 lifespan 上下文管理器
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup 事件
-    loop = asyncio.get_running_loop()
-    manager.set_loop(loop)
-    logger.info("WebSocket Manager bound to loop: %s", id(loop))
-    # 初始化MongoDB索引
+    logger.info("Application starting up...")
+    
+    # 初始化 MongoDB 索引
     await init_mongodb_indexes()
     logger.info("MongoDB indexes initialized")
+    
+    # 设置 WebSocket 管理器（不再需要手动绑定 loop）
+    monitor.set_websocket_manager(manager)
+    logger.info("WebSocket manager initialized")
+    
     yield
+    
     # Shutdown 事件
     logger.info("Application shutting down...")
+    
+    # 优雅关闭所有 WebSocket 连接
+    await manager.close_all()
+    
     # 刷新所有记忆缓冲区
     memory_manager = get_memory_manager()
     await memory_manager.flush_all()
-
-    # 关闭MongoDB连接
+    logger.info("Memory buffers flushed")
+    
+    # 关闭 MongoDB 连接
     await close_mongodb_connection()
     logger.info("MongoDB connection closed")
     logger.info("Application shutdown complete")
@@ -80,30 +90,91 @@ async def lifespan(app: FastAPI):
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
-        # 延迟绑定 loop，防止初始化时 loop 不一致
-        self.loop = None
+        # 延迟绑定 loop，防止初始化时 loop 不一致（改为私有属性）
+        self._loop: asyncio.AbstractEventLoop | None = None
+        # 线程安全锁（用于保护 active_connections 字典访问）
+        self._lock = asyncio.Lock()
+
+    def get_loop(self) -> asyncio.AbstractEventLoop:
+        """lazy 获取主事件循环"""
+        if self._loop is None or self._loop.is_closed():
+            try:
+                self._loop = asyncio.get_running_loop()
+            except RuntimeError:
+                raise RuntimeError(
+                    "No running event loop found. "
+                    "ConnectionManager must be used within the main FastAPI async context."
+                )
+        return self._loop
 
     def set_loop(self, loop):
-        self.loop = loop
+        """设置事件循环（保持向后兼容，但现在推荐使用 get_loop()）"""
+        self._loop = loop
         monitor.set_websocket_manager(self)
 
     async def connect(self, websocket: WebSocket, thread_id: str):
         await websocket.accept()
-        self.active_connections[thread_id] = websocket
+        async with self._lock:
+            self.active_connections[thread_id] = websocket
         logger.info("Client connected: %s", thread_id)
 
-    def disconnect(self, websocket: WebSocket, thread_id: str):
-        if thread_id in self.active_connections:
-            del self.active_connections[thread_id]
-        logger.info("Client disconnected: %s", thread_id)
+    async def disconnect(self, thread_id: str):
+        """断开连接并关闭 WebSocket"""
+        websocket = None
+        async with self._lock:
+            if thread_id in self.active_connections:
+                websocket = self.active_connections.pop(thread_id)
+        if websocket:
+            try:
+                await websocket.close(code=1000, reason="Client disconnected normally")
+            except Exception:
+                pass  # 连接可能已关闭
+            logger.info("Client disconnected: %s", thread_id)
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
 
     async def send_to_thread(self, message: dict, thread_id: str):
-        if thread_id in self.active_connections:
-            websocket = self.active_connections[thread_id]
-            await websocket.send_json(message)
+        """向指定线程发送消息（在主事件循环中调用）"""
+        if thread_id not in self.active_connections:
+            logger.warning("Thread %s not connected", thread_id)
+            return
+
+        try:
+            await self.active_connections[thread_id].send_json(message)
+        except Exception as e:
+            logger.error("Failed to send to thread %s: %s", thread_id, e)
+            await self.disconnect(thread_id)
+
+    def send_to_thread_safe(self, message: dict, thread_id: str):
+        """供 ToolMonitor 从任意线程（线程池）安全调用"""
+        if not thread_id:
+            return
+        
+        try:
+            loop = self.get_loop()
+            asyncio.run_coroutine_threadsafe(
+                self.send_to_thread(message, thread_id), 
+                loop
+            )
+        except Exception as e:
+            logger.warning("Failed to schedule WebSocket message: %s", e)
+
+    async def close_all(self):
+        """优雅关闭所有连接（shutdown 时调用）"""
+        async with self._lock:
+            if not self.active_connections:
+                return
+            connections = list(self.active_connections.items())
+            self.active_connections.clear()
+
+        logger.info("Closing %d WebSocket connections...", len(connections))
+        for thread_id, websocket in connections:
+            try:
+                await websocket.close(code=1001, reason="Server shutting down")
+            except Exception:
+                pass  # 连接可能已关闭
+        logger.info("All WebSocket connections closed.")
 
 
 # 全局 manager 实例
@@ -516,10 +587,10 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
             data = await websocket.receive_text()
             await websocket.send_json({"type": "pong", "message": f"received: {data}"})
     except WebSocketDisconnect:
-        manager.disconnect(websocket, thread_id)
+        await manager.disconnect(thread_id)
     except Exception as e:
         logger.error("WebSocket Error: %s", e)
-        manager.disconnect(websocket, thread_id)
+        await manager.disconnect(thread_id)
 
 
 if __name__ == "__main__":
