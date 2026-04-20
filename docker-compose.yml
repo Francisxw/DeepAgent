@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # Redis - 会话缓存 / Token黑名单 / 上下文卸载
+  # ============================================
+  redis:
+    image: redis:7
+    container_name: deepagent-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --save 60 1000
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - deepagent-network
+
+  # ============================================
+  # MongoDB - 对话历史持久化
+  # ============================================
+  mongodb:
+    image: mongo:7
+    container_name: deepagent-mongodb
+    ports:
+      - "${MONGODB_PORT:-27017}:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-chat_memory_db}
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - deepagent-network
+
+  # ============================================
+  # PaddleOCR - OCR 文字识别服务
+  # ============================================
+  paddleocr:
+    image: paddlecloud/paddleocr:2.6-cpu-latest
+    container_name: deepagent-paddleocr
+    ports:
+      - "${PADDLEOCR_PORT:-8868}:8868"
+    volumes:
+      - paddleocr-models:/paddle
+    environment:
+      - USE_GPU=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8868/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - deepagent-network
+
+  # ============================================
+  # MySQL - 业务数据存储 (可选)
+  # ============================================
+  mysql:
+    image: mysql:8.0
+    container_name: deepagent-mysql
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-root123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-pharma_db}
+      MYSQL_USER: ${MYSQL_USER:-deepagent}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-deepagent123}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD:-root123}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - deepagent-network
+
+# ============================================
+# 数据卷
+# ============================================
+volumes:
+  redis-data:
+    name: deepagent-redis-data
+  mongodb-data:
+    name: deepagent-mongodb-data
+  mongodb-config:
+    name: deepagent-mongodb-config
+  mysql-data:
+    name: deepagent-mysql-data
+  paddleocr-models:
+    name: deepagent-paddleocr-models
+
+# ============================================
+# 网络
+# ============================================
+networks:
+  deepagent-network:
+    name: deepagent-network
+    driver: bridge
