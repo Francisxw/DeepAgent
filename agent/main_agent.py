@@ -52,13 +52,12 @@ from utils.redis_store_backend import RedisStore
 from utils.chat_memory_manager import get_memory_manager
 
 
-# 初始化本地知识库（启动时加载向量数据库）
-try:
-    from tools.local_rag_tools import init_knowledge_base
-
-    init_knowledge_base()
-except Exception as e:
-    logger.warning("本地知识库初始化失败: %s", e)
+# 本地知识库初始化已移至 lifespan 中，避免导入时执行网络操作导致 reload 循环
+# try:
+#     from tools.local_rag_tools import init_knowledge_base
+#     init_knowledge_base()
+# except Exception as e:
+#     logger.warning("本地知识库初始化失败: %s", e)
 
 # 1. 搭建多智能体结构
 subagents_list = [

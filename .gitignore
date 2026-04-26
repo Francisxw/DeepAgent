@@ -70,6 +70,16 @@ data/chroma_db/
 chroma.sqlite3
 
 # ============================================
+# Docker 数据目录（绑定挂载的数据库数据）
+# ============================================
+# 包含 Redis、MongoDB、MySQL、PaddleOCR 的数据文件
+data/redis/
+data/mongodb/
+data/mongodb-config/
+data/mysql/
+data/paddleocr/
+
+# ============================================
 # 会话输出目录（动态生成，无需版本控制）
 # ============================================
 updated/

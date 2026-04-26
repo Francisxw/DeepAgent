@@ -10,7 +10,7 @@ services:
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - redis-data:/data
+      - ./data/redis:/data
     command: >
       redis-server
       --appendonly yes
@@ -37,8 +37,8 @@ services:
     environment:
       MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-chat_memory_db}
     volumes:
-      - mongodb-data:/data/db
-      - mongodb-config:/data/configdb
+      - ./data/mongodb:/data/db
+      - ./data/mongodb-config:/data/configdb
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
@@ -57,7 +57,7 @@ services:
     ports:
       - "${PADDLEOCR_PORT:-8868}:8868"
     volumes:
-      - paddleocr-models:/paddle
+      - ./data/paddleocr:/paddle
     environment:
       - USE_GPU=false
     restart: unless-stopped
@@ -84,7 +84,7 @@ services:
       MYSQL_USER: ${MYSQL_USER:-deepagent}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-deepagent123}
     volumes:
-      - mysql-data:/var/lib/mysql
+      - ./data/mysql:/var/lib/mysql
       - ./sql:/docker-entrypoint-initdb.d:ro
     command: >
       --character-set-server=utf8mb4
@@ -100,19 +100,8 @@ services:
       - deepagent-network
 
 # ============================================
-# 数据卷
-# ============================================
-volumes:
-  redis-data:
-    name: deepagent-redis-data
-  mongodb-data:
-    name: deepagent-mongodb-data
-  mongodb-config:
-    name: deepagent-mongodb-config
-  mysql-data:
-    name: deepagent-mysql-data
-  paddleocr-models:
-    name: deepagent-paddleocr-models
+# 注意：数据现在存储在 ./data/ 目录下
+# 请确保该目录已添加到 .gitignore
 
 # ============================================
 # 网络

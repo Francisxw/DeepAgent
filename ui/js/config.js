@@ -5,8 +5,8 @@
 
 const config = {
   // API 基础配置
-  API_BASE_URL: 'http://127.0.0.1:8000',
-  WS_BASE_URL: 'ws://127.0.0.1:8000/ws',
+  API_BASE_URL: 'http://127.0.0.1:8088',
+  WS_BASE_URL: 'ws://127.0.0.1:8088/ws',
   
   // 文件上传配置
   MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB

@@ -295,11 +295,36 @@ cp .env.example .env
 # 4. 初始化 MySQL 数据库
 mysql -u root -p < sql/company_data.sql
 
-# 5. 启动服务
-python api/server.py
+# 5. 启动依赖服务（Redis、MongoDB、MySQL）
+docker compose up -d redis mongodb mysql
+
+# 6. 启动应用服务
+python run.py
 ```
 
-服务启动后访问 `http://127.0.0.1:8000` 即可使用。
+服务启动后访问 `.env` 中配置的地址（默认 `http://127.0.0.1:8088`）即可使用。
+
+### 启动方式说明
+
+项目支持以下启动方式：
+
+```bash
+# 方式一：推荐 - 统一启动脚本（自动读取 .env 配置）
+python run.py
+
+# 方式二：指定参数启动
+python run.py --port 9000 --host 0.0.0.0
+
+# 方式三：直接运行服务模块
+python api/server.py
+
+# 方式四：使用 uvicorn 命令（需手动指定端口）
+uvicorn api.server:app --port 8088
+```
+
+**配置优先级**：命令行参数 > `.env` 环境变量 > 默认值
+
+**Windows 注意**：热重载 (`--reload`) 在 Windows 上已自动禁用，避免 multiprocessing 兼容问题
 
 ---
 

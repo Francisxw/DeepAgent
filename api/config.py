@@ -28,7 +28,7 @@ DEBUG_RETURN_VERIFICATION_CODE: bool = (
 # =========================================================================================
 # 逗号分隔的允许来源列表；未设置时默认允许本地开发地址。
 _CORS_ORIGINS_RAW: str = os.getenv(
-    "CORS_ORIGINS", "http://127.0.0.1:8000,http://localhost:8000"
+    "CORS_ORIGINS", f"http://127.0.0.1:{os.getenv('API_PORT', '8000')},http://localhost:{os.getenv('API_PORT', '8000')}"
 )
 CORS_ORIGINS: List[str] = [
     origin.strip() for origin in _CORS_ORIGINS_RAW.split(",") if origin.strip()

@@ -1,13 +1,18 @@
 import os
 import sys
+from dotenv import load_dotenv
+
+# 加载 .env 文件
+load_dotenv()
+
 import uuid
 import asyncio
 import re as _re
 from urllib.parse import quote
 
-# Add project root to sys.path (必须在其他导入之前)
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_dir)
+# 获取项目根目录（api/server.py 的父目录的父目录）
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 将项目根目录加入模块搜索路径，以便直接运行 `python api/server.py` 时能正确解析 `import api.xxx`
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
@@ -52,6 +57,9 @@ from api.mongodb_client import get_async_client
 
 logger = logging.getLogger(__name__)
 
+API_HOST = os.getenv("API_HOST", "127.0.0.1")
+API_PORT = int(os.getenv("API_PORT", "8000"))
+
 
 # 定义 lifespan 上下文管理器
 @asynccontextmanager
@@ -62,7 +70,15 @@ async def lifespan(app: FastAPI):
     # 初始化 MongoDB 索引
     await init_mongodb_indexes()
     logger.info("MongoDB indexes initialized")
-    
+
+    # 初始化本地知识库（移至 lifespan 中，避免导入时执行导致 reload 循环）
+    try:
+        from tools.local_rag_tools import init_knowledge_base
+        init_knowledge_base()
+        logger.info("本地知识库初始化成功")
+    except Exception as e:
+        logger.warning("本地知识库初始化失败: %s", e)
+
     # 设置 WebSocket 管理器（不再需要手动绑定 loop）
     monitor.set_websocket_manager(manager)
     logger.info("WebSocket manager initialized")
@@ -603,5 +619,4 @@ if __name__ == "__main__":
             logger.error("数据库表结构初始化失败!")
     else:
         logger.error("数据库连接失败，请检查配置!")
-
-    uvicorn.run("api.server:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("api.server:app", host=API_HOST, port=API_PORT, reload=(sys.platform != "win32"))
